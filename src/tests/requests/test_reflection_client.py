@@ -1,5 +1,8 @@
 from .app import app
-from ..testcase import RealServerTestCase
+from ..testcase import (
+    RealServerTestCase,
+    RealTLSServerTestCase
+)
 from ...grpc_requests import Client
 
 
@@ -165,4 +168,21 @@ class StreamUnaryTestCase(RealServerTestCase):
         self.assertTrue(f"{self.service} doesn't support {not_support_method} method" in exception_msg)
         for method in ('HelloEveryone', 'SayHello', 'SayHelloGroup', 'SayHelloOneByOne'):
             self.assertTrue(method in exception_msg)
+        client._channel.close()
+
+
+
+
+class StreamUnaryTLSTestCase(RealTLSServerTestCase):
+    app = app
+    service = 'helloworld.Greeter'
+    method = 'HelloEveryone'
+
+    def test_success_request(self):
+        config = self.tls_config
+        client = Client(self.default_endpoint, ssl_credentials=self.channel_credentials)
+        names = ['sinsky', 'summer', 'wone']
+        result = client.stream_unary(self.service, self.method, ({"name": name} for name in names))
+        self.assertIsInstance(result, dict)
+        self.assertTrue(f"{names}" in result.get('message', ''))
         client._channel.close()

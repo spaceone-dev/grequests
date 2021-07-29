@@ -31,5 +31,28 @@ class RealServerTestCase(HomiRealServerTestCase):
         self.test_server.stop(1)
 
 
+class RealTLSServerTestCase(HomiRealServerTestCase):
+    reset_descriptor_pool = True
+    tls = True
+
+    @property
+    def default_endpoint(self):
+        return f"{self.default_server_config['host']}:{self.default_server_config['port']}"
+
+    def reset_grpc_db(self):
+        reset_cached_client()
+        if self.reset_descriptor_pool:
+            _descriptor_pool._DEFAULT = DescriptorPool()
+            _symbol_database._DEFAULT = SymbolDatabase(pool=_descriptor_pool.Default())
+
+    def setUp(self):
+        self.reset_grpc_db()
+        super().setUp()
+
+    def tearDown(self):
+        self.test_server.stop(1)
+
+
+
 class RealServerAsyncTestCase(RealServerTestCase, AsyncTestCaseClass):
     pass
